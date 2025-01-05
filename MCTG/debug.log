@@ -1,0 +1,35 @@
+== Info: Host localhost:10001 was resolved.
+== Info: IPv6: ::1
+== Info: IPv4: 127.0.0.1
+== Info:   Trying [::1]:10001...
+== Info: Connected to localhost (::1) port 10001
+=> Send header, 139 bytes (0x8b)
+0000: 50 4f 53 54 20 2f 72 65 67 69 73 74 65 72 20 48 POST /register H
+0010: 54 54 50 2f 31 2e 31 0d 0a 48 6f 73 74 3a 20 6c TTP/1.1..Host: l
+0020: 6f 63 61 6c 68 6f 73 74 3a 31 30 30 30 31 0d 0a ocalhost:10001..
+0030: 55 73 65 72 2d 41 67 65 6e 74 3a 20 63 75 72 6c User-Agent: curl
+0040: 2f 38 2e 37 2e 31 0d 0a 41 63 63 65 70 74 3a 20 /8.7.1..Accept: 
+0050: 2a 2f 2a 0d 0a 43 6f 6e 74 65 6e 74 2d 54 79 70 */*..Content-Typ
+0060: 65 3a 20 61 70 70 6c 69 63 61 74 69 6f 6e 2f 6a e: application/j
+0070: 73 6f 6e 0d 0a 43 6f 6e 74 65 6e 74 2d 4c 65 6e son..Content-Len
+0080: 67 74 68 3a 20 35 31 0d 0a 0d 0a                gth: 51....
+=> Send data, 51 bytes (0x33)
+0000: 7b 22 75 73 65 72 6e 61 6d 65 22 3a 20 22 74 65 {"username": "te
+0010: 73 74 75 73 65 72 22 2c 20 22 70 61 73 73 77 6f stuser", "passwo
+0020: 72 64 22 3a 20 22 70 61 73 73 77 6f 72 64 31 32 rd": "password12
+0030: 33 22 7d                                        3"}
+== Info: upload completely sent off: 51 bytes
+<= Recv header, 16 bytes (0x10)
+0000: 48 54 54 50 2f 31 2e 31 20 32 30 30 20 4f 4b 0a HTTP/1.1 200 OK.
+<= Recv header, 25 bytes (0x19)
+0000: 43 6f 6e 74 65 6e 74 2d 54 79 70 65 3a 20 74 65 Content-Type: te
+0010: 78 74 2f 70 6c 61 69 6e 0a                      xt/plain.
+<= Recv header, 1 bytes (0x1)
+0000: 0a                                              .
+== Info: no chunk, no close, no size. Assume close to signal end
+<= Recv data, 45 bytes (0x2d)
+0000: 45 72 72 6f 72 3a 20 4d 69 73 73 69 6e 67 20 6f Error: Missing o
+0010: 72 20 69 6e 76 61 6c 69 64 20 75 73 65 72 6e 61 r invalid userna
+0020: 6d 65 2f 70 61 73 73 77 6f 72 64 2e 0a          me/password..
+<= Recv data, 0 bytes (0x0)
+== Info: Closing connection
