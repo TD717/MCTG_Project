@@ -2,7 +2,6 @@ package com.mctg.requestHandler;
 
 import com.mctg.cards.Card;
 import com.mctg.cards.MonsterCard;
-import com.mctg.cards.CardFactory;
 import com.mctg.db.DBConnection;
 import com.mctg.player.UserService;
 import com.mctg.trading.TradeController;
@@ -279,14 +278,13 @@ public class RequestHandler {
             return "400 Bad Request - Missing username.";
         }
 
-        List<Card> newCards = CardFactory.generateRandomCards(5);
-
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
 
             // Deduct coins
             PreparedStatement coinStmt = conn.prepareStatement(
-                    "UPDATE players SET coins = coins - 5 WHERE username = ? AND coins >= 5");
+                    "UPDATE players SET coins = coins - 5 WHERE username = ? AND coins >= 5"
+            );
             coinStmt.setString(1, username);
             int rowsUpdated = coinStmt.executeUpdate();
 
@@ -294,23 +292,33 @@ public class RequestHandler {
                 return "400 Bad Request - Not enough coins.";
             }
 
-            // Insert cards into database
-            PreparedStatement insertStmt = conn.prepareStatement(
-                    "INSERT INTO cards (card_id, name, damage, element, type, player_id) VALUES (?, ?, ?, ?, ?, ?)");
+            // Select 5 random available cards from the database
+            PreparedStatement selectCards = conn.prepareStatement(
+                    "SELECT card_id FROM cards WHERE player_id IS NULL ORDER BY RANDOM() LIMIT 5"
+            );
 
-            for (Card card : newCards) {
-                insertStmt.setObject(1, UUID.fromString(card.getCardID()));
-                insertStmt.setString(2, card.getName());
-                insertStmt.setInt(3, card.getDamage());
-                insertStmt.setString(4, card.getElement().toString());
-                insertStmt.setString(5, card instanceof MonsterCard ? "monster" : "spell");
-                insertStmt.setObject(6, getPlayerId(username, conn));
-                insertStmt.addBatch();
+            ResultSet rs = selectCards.executeQuery();
+            UUID playerId = getPlayerId(username, conn);
+            int cardCount = 0;
+
+            PreparedStatement assignStmt = conn.prepareStatement(
+                    "UPDATE cards SET player_id = ? WHERE card_id = ?"
+            );
+
+            while (rs.next()) {
+                assignStmt.setObject(1, playerId);
+                assignStmt.setObject(2, rs.getObject("card_id"));
+                assignStmt.addBatch();
+                cardCount++;
             }
 
-            insertStmt.executeBatch();
-            conn.commit();
+            if (cardCount < 5) {
+                conn.rollback();
+                return "500 Internal Server Error - Not enough available cards.";
+            }
 
+            assignStmt.executeBatch();
+            conn.commit();
             return "Package purchased successfully.";
 
         } catch (SQLException e) {
@@ -319,6 +327,7 @@ public class RequestHandler {
             return "500 Internal Server Error - Failed to purchase package.";
         }
     }
+
 
     private void rollbackTransaction() {
         try (Connection conn = DBConnection.getConnection()) {
