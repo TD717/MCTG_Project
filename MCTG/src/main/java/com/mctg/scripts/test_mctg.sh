@@ -63,14 +63,75 @@ PACKAGE_RESPONSE2=$(curl -s -X POST $BASE_URL/package \
 echo "Package Response for testuser2: $PACKAGE_RESPONSE2"
 echo -e "\n"
 
-echo "7) Verify acquired cards for testuser1"
-CARDS_RESPONSE1=$(curl -s -X GET "$BASE_URL/cards" \
+echo "7) Retrieve acquired cards for testuser1"
+CARDS_RESPONSE1=$(curl -s -X GET $BASE_URL/cards \
+    -H "Content-Type: application/json" \
     -H "Authorization: Bearer $TOKEN1")
+
 echo "Cards for testuser1: $CARDS_RESPONSE1"
+
+# Extract all card IDs into an array
+CARD_IDS1=($(echo $CARDS_RESPONSE1 | jq -r '.cards[]'))
+echo "Extracted Card IDs for testuser1: $(IFS=,; echo "${CARD_IDS1[*]}")"
 echo -e "\n"
 
-echo "8) Verify acquired cards for testuser2"
-CARDS_RESPONSE2=$(curl -s -X GET "$BASE_URL/cards" \
+echo "8) Retrieve acquired cards for testuser2"
+CARDS_RESPONSE2=$(curl -s -X GET $BASE_URL/cards \
+    -H "Content-Type: application/json" \
     -H "Authorization: Bearer $TOKEN2")
+
 echo "Cards for testuser2: $CARDS_RESPONSE2"
+
+# Extract all card IDs into an array
+CARD_IDS2=($(echo $CARDS_RESPONSE2 | jq -r '.cards[]'))
+echo "Extracted Card IDs for testuser2: $(IFS=,; echo "${CARD_IDS1[*]}")"
+echo -e "\n"
+
+echo "9) Create trade for testuser1 (Offering Cards)"
+for CARD_ID in "${CARD_IDS1[@]}"; do
+    TRADE_RESPONSE1=$(curl -s -X POST $BASE_URL/trade \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $TOKEN1" \
+        -d "{\"username\": \"testuser1\", \"cardId\": \"$CARD_ID\", \"requiredType\": \"MONSTER\", \"element\": \"FIRE\", \"minDamage\": 20}")
+    echo "Trade Response for $CARD_ID: $TRADE_RESPONSE1"
+done
+echo -e "\n"
+
+echo "10) List available trades"
+LIST_TRADES=$(curl -s -X GET $BASE_URL/trade \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $TOKEN2")
+echo "Trades available for testuser2: $LIST_TRADES"
+TRADE_ID=$(echo $LIST_TRADES | jq -r '.[0].tradeId')
+echo "Extracted Trade ID: $TRADE_ID"
+echo -e "\n"
+
+echo "11) Accept trade by testuser2"
+ACCEPT_TRADE=$(curl -s -X POST $BASE_URL/trade/accept \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $TOKEN2" \
+    -d "{\"username\": \"testuser2\", \"tradeId\": \"$TRADE_ID\", \"cardId\": \"${CARD_IDS2[0]}\"}")
+echo "Trade Acceptance Response: $ACCEPT_TRADE"
+echo -e "\n"
+
+echo "12) Add 4 cards to deck for battle (testuser1)"
+DECK_RESPONSE1=$(curl -s -X POST $BASE_URL/deck \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $TOKEN1" \
+    -d "{\"username\": \"testuser1\", \"cards\": [$(printf "\"%s\"," "${CARD_IDS1[@]:0:4}" | sed 's/,$//')]}")
+echo "Deck Response for testuser1: $DECK_RESPONSE1"
+
+echo "12) Add 4 cards to deck for battle (testuser2)"
+DECK_RESPONSE2=$(curl -s -X POST $BASE_URL/deck \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $TOKEN2" \
+    -d "{\"username\": \"testuser2\", \"cards\": [$(printf "\"%s\"," "${CARD_IDS2[@]:0:4}" | sed 's/,$//')]}")
+echo "Deck Response for testuser2: $DECK_RESPONSE2"
+
+echo "13) Initiate battle between testuser1 and testuser2"
+BATTLE_RESPONSE=$(curl -s -X POST $BASE_URL/battle \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $TOKEN1" \
+    -d "{\"player1\": \"testuser1\", \"player2\": \"testuser2\"}")
+echo "Battle Result: $BATTLE_RESPONSE"
 echo -e "\n"

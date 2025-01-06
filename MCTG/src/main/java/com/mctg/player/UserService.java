@@ -216,7 +216,6 @@ public class UserService {
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                // Correctly extract player_id from ResultSet
                 UUID playerId = UUID.fromString(rs.getString("player_id"));
 
                 Player player = new Player(
@@ -228,6 +227,23 @@ public class UserService {
                 player.setCoins(rs.getInt("coins"));
                 player.setGamesPlayed(rs.getInt("games_played"));
                 return player;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public UUID getPlayerIdFromDatabase(String username) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "SELECT player_id FROM players WHERE username = ?")) {
+
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return UUID.fromString(rs.getString("player_id"));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -459,7 +475,10 @@ public class UserService {
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
+                System.out.println("Token " + token + " maps to user: " + rs.getString("username"));
                 return rs.getString("username");
+            } else {
+                System.out.println("Token not found in DB.");
             }
         } catch (SQLException e) {
             e.printStackTrace();

@@ -34,12 +34,14 @@ public class Player {
         this.elo = 100;
         this.gamesPlayed = 0;
         this.activeToken = null;
-        this.playerId = UUID.randomUUID();
+        this.playerId = playerId;  // Use the passed playerId from DB
     }
 
     public String getUsername() {
         return username;
     }
+
+    public UUID getPlayerId() { return playerId; }
 
     public void setPassword(String password) {
         this.password = hashPassword(password);
@@ -76,6 +78,7 @@ public class Player {
 
     private void loadCardStackFromDatabase() {
         cardStack.clear();
+        System.out.println("Loading cards for player: " + username + " with playerId: " + playerId);
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(
                      "SELECT * FROM cards WHERE player_id = ?")) {
@@ -85,7 +88,7 @@ public class Player {
 
             while (rs.next()) {
                 Card card;
-                String type = rs.getString("type");  // Fetch type from DB
+                String type = rs.getString("type");
 
                 if ("MONSTER".equalsIgnoreCase(type)) {
                     card = new MonsterCard(
@@ -105,13 +108,14 @@ public class Player {
                     throw new IllegalArgumentException("Unknown card type: " + type);
                 }
 
+                System.out.println("Loaded card: " + card.getName() + " for player: " + username);
                 cardStack.add(card);
             }
+            System.out.println("Total cards loaded for " + username + ": " + cardStack.size());
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
-
 
     public List<Card> getDeck() {
         return deck;
@@ -124,16 +128,24 @@ public class Player {
         this.deck = newDeck;
     }
 
-    public void incrementGamesPlayed() {
-        gamesPlayed++;
-    }
-
     public int getGamesPlayed() {
         return gamesPlayed;
     }
 
+    public void setGamesPlayed(int gamesPlayed) {
+        this.gamesPlayed = gamesPlayed;
+    }
+
+    public void incrementGamesPlayed() {
+        gamesPlayed++;
+    }
+
     public int getElo() {
         return elo;
+    }
+
+    public void setElo(int elo) {
+        this.elo = elo;
     }
 
     public void increaseElo(int points) {
@@ -195,17 +207,8 @@ public class Player {
         return lockedCards.contains(cardId);
     }
 
-    public void setElo(int elo) {
-        this.elo = elo;
-    }
-
     public void setCoins(int coins) {
         this.coins = coins;
     }
 
-    public void setGamesPlayed(int gamesPlayed) {
-        this.gamesPlayed = gamesPlayed;
-    }
-
-    public UUID getPlayerId() { return playerId; }
 }
