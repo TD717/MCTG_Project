@@ -1,8 +1,9 @@
 package com.mctg.game;
 
 import com.mctg.cards.Card;
+import com.mctg.cards.MonsterCard;
+import com.mctg.cards.SpellCard;
 import com.mctg.player.Player;
-import com.mctg.player.UserService;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -60,6 +61,10 @@ public class Battle {
             } else {
                 battleLog.add("The round ends in a draw. No cards are removed.");
             }
+
+            if (isBattleOver()) {
+                return determineWinner(deck1, deck2);
+            }
         }
 
         return determineWinner(deck1, deck2);
@@ -68,6 +73,34 @@ public class Battle {
     public int calculateEffectiveDamage(Card attacker, Card defender, Booster booster) {
         int baseDamage = attacker.calculateDamage(defender);
 
+        // Handle special cases
+        if (attacker instanceof MonsterCard && defender instanceof MonsterCard) {
+            // Pure monster fights are not affected by element types
+            return baseDamage;
+        }
+
+        // Apply elemental effectiveness for spell cards
+        if (attacker instanceof SpellCard && defender instanceof MonsterCard) {
+            switch (((SpellCard) attacker).getElement()) {
+                case FIRE:
+                    if (defender.getElement() == Card.ElementType.WATER) {
+                        baseDamage *= 0.5;  // Fire vs Water is halved
+                    }
+                    break;
+                case WATER:
+                    if (defender.getElement() == Card.ElementType.FIRE) {
+                        baseDamage *= 2;  // Water vs Fire is doubled
+                    }
+                    break;
+                case NORMAL:
+                    if (defender.getElement() == Card.ElementType.WATER) {
+                        baseDamage *= 1.5;  // Normal vs Water is increased
+                    }
+                    break;
+            }
+        }
+
+        // Apply booster effects
         switch (booster.getType()) {
             case DAMAGE_INCREASE:
                 baseDamage *= 1.2;  // 20% increase
@@ -76,9 +109,10 @@ public class Battle {
                 baseDamage = 0;  // Immune to damage this round
                 break;
             case ELEMENT_NEUTRALIZER:
-                // Elemental advantage is neutralized, return base damage
+                baseDamage = attacker.getDamage();  // Neutralize elemental advantage
                 break;
         }
+
         return baseDamage;
     }
 
@@ -104,22 +138,6 @@ public class Battle {
 
     public List<String> getBattleLog() {
         return battleLog;
-    }
-
-    public static String generateScoreboard() {
-        List<Player> players = UserService.getInstance().getLeaderboard();
-
-        if (players.isEmpty()) {
-            return "No players available for the scoreboard.";
-        }
-
-        StringBuilder scoreboard = new StringBuilder("🏆 Scoreboard 🏆\n");
-        int rank = 1;
-        for (Player player : players) {
-            scoreboard.append(String.format("%d. %s - ELO: %d (Games: %d)\n",
-                    rank++, player.getUsername(), player.getElo(), player.getGamesPlayed()));
-        }
-        return scoreboard.toString();
     }
 
     public boolean isBattleOver() {

@@ -226,6 +226,10 @@ public class UserService {
                 player.setElo(rs.getInt("elo"));
                 player.setCoins(rs.getInt("coins"));
                 player.setGamesPlayed(rs.getInt("games_played"));
+
+                // Force reload the card stack for the specific player
+                player.loadCardStackFromDatabase();
+
                 return player;
             }
         } catch (SQLException e) {
@@ -233,6 +237,7 @@ public class UserService {
         }
         return null;
     }
+
 
     public UUID getPlayerIdFromDatabase(String username) {
         try (Connection conn = DBConnection.getConnection();

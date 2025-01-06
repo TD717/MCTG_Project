@@ -70,13 +70,11 @@ public class Player {
     }
 
     public List<Card> getCardStack() {
-        if (cardStack.isEmpty()) {
-            loadCardStackFromDatabase();
-        }
+        loadCardStackFromDatabase();  // Always reload cards from the database
         return cardStack;
     }
 
-    private void loadCardStackFromDatabase() {
+    void loadCardStackFromDatabase() {
         cardStack.clear();
         System.out.println("Loading cards for player: " + username + " with playerId: " + playerId);
         try (Connection conn = DBConnection.getConnection();
@@ -107,8 +105,6 @@ public class Player {
                 } else {
                     throw new IllegalArgumentException("Unknown card type: " + type);
                 }
-
-                System.out.println("Loaded card: " + card.getName() + " for player: " + username);
                 cardStack.add(card);
             }
             System.out.println("Total cards loaded for " + username + ": " + cardStack.size());

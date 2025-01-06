@@ -1,7 +1,6 @@
 package com.mctg.requestHandler;
 
 import com.mctg.cards.Card;
-import com.mctg.cards.MonsterCard;
 import com.mctg.db.DBConnection;
 import com.mctg.player.UserService;
 import com.mctg.trading.TradeController;
@@ -83,18 +82,17 @@ public class RequestHandler {
             case "/trade/accept":
                 if (method == HttpMethod.POST) {
                     return tradeController.acceptTrade(
-                            body.get("username"),
                             body.get("tradeId"),
-                            body.get("cardId")
+                            body.get("username")
                     );
                 }
                 break;
 
             case "/trade/delete":
                 if (method == HttpMethod.POST) {
-                    return tradeController.deleteTrade(
-                            body.get("username"),
-                            body.get("tradeId")
+                    return tradeController.cancelTrade(
+                            body.get("tradeId"),
+                            body.get("username")
                     );
                 }
                 break;
@@ -216,21 +214,25 @@ public class RequestHandler {
                 return "500 Internal Server Error - Player ID not found.";
             }
 
-            // Select 5 unassigned cards randomly
-            PreparedStatement selectCards = conn.prepareStatement(
-                    "SELECT card_id FROM cards WHERE player_id IS NULL ORDER BY RANDOM() LIMIT 5"
+            // Atomic card assignment (UPDATE and RETURNING)
+            PreparedStatement assignCards = conn.prepareStatement(
+                    "UPDATE cards " +
+                            "SET player_id = ? " +
+                            "WHERE card_id IN (SELECT card_id FROM cards WHERE player_id IS NULL ORDER BY RANDOM() LIMIT 5) " +
+                            "RETURNING card_id"
             );
-            ResultSet rs = selectCards.executeQuery();
+            assignCards.setObject(1, playerId);
+            ResultSet rs = assignCards.executeQuery();
 
             int cardCount = 0;
-            PreparedStatement assignStmt = conn.prepareStatement(
-                    "UPDATE cards SET player_id = ? WHERE card_id = ?"
+            PreparedStatement addToPlayerCardsStmt = conn.prepareStatement(
+                    "INSERT INTO player_cards (username, card_id) VALUES (?, ?::uuid) ON CONFLICT DO NOTHING"
             );
 
             while (rs.next()) {
-                assignStmt.setObject(1, playerId);
-                assignStmt.setObject(2, rs.getObject("card_id"));
-                assignStmt.addBatch();
+                addToPlayerCardsStmt.setString(1, username);
+                addToPlayerCardsStmt.setObject(2, rs.getObject("card_id"));
+                addToPlayerCardsStmt.addBatch();
                 cardCount++;
             }
 
@@ -241,9 +243,11 @@ public class RequestHandler {
                 return "500 Internal Server Error - Not enough available cards.";
             }
 
-            assignStmt.executeBatch();
+            // Execute batch to add to player_cards table
+            addToPlayerCardsStmt.executeBatch();
             conn.commit();
-            System.out.println("Package assigned successfully to " + username);
+
+            System.out.println("Cards successfully assigned to " + username);
 
             // Force reload player's card stack after purchase
             player.getCardStack().clear();
@@ -281,7 +285,6 @@ public class RequestHandler {
         player.getCardStack();
 
         List<Card> cardStack = player.getCardStack();
-        System.out.println("Player " + username + " now has " + cardStack.size() + " cards.");
 
         if (cardStack.isEmpty()) {
             return "{\"message\": \"No cards available\"}";
@@ -333,17 +336,37 @@ public class RequestHandler {
     }
 
     private String handleTradeRequest(Request request, Map<String, String> body) {
+        // Handling POST request for trade creation
         if (request.getMethod().equals(HttpMethod.POST)) {
+            // Validate that all required fields are present in the body
+            String username = body.get("username");
+            String cardId = body.get("cardId");
+            String requiredType = body.get("requiredType");
+            String element = body.get("element");
+
+            if (username == null || cardId == null || requiredType == null || element == null) {
+                return "400 Bad Request - Missing required fields.";
+            }
+
+            // Parse minDamage with a default of 0 if not provided
+            int minDamage = Integer.parseInt(body.getOrDefault("minDamage", "0"));
+
+            // Call the tradeController to create the trade
             return tradeController.createTrade(
-                    body.get("username"),
-                    body.get("cardId"),
-                    body.get("requiredType"),
-                    body.get("element"),
-                    Integer.parseInt(body.getOrDefault("minDamage", "0"))
+                    username,
+                    cardId,
+                    requiredType,
+                    element,
+                    minDamage
             );
-        } else if (request.getMethod().equals(HttpMethod.GET)) {
+        }
+
+        // Handling GET request for listing trades
+        else if (request.getMethod().equals(HttpMethod.GET)) {
             return tradeController.listTrades();
         }
+
+        // Return error message for unsupported methods
         return "Invalid method for trading.";
     }
 
