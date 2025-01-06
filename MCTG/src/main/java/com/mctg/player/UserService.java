@@ -276,21 +276,21 @@ public class UserService {
         }
     }
 
-    public String updateUserProfile(String username, Map<String, String> body) {
-        try (Connection conn = DBConnection.getConnection()) {
-            String sql = "UPDATE players SET ";
+    public String updateUserProfile(String username, Map<String, String> updates) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+
+        try {
+            conn = DBConnection.getConnection();
+            StringBuilder sql = new StringBuilder("UPDATE players SET ");
 
             boolean updateRequired = false;
-            if (body.containsKey("password")) {
-                sql += "password_hash = ?, ";
+            if (updates.containsKey("username")) {
+                sql.append("username = ?, ");
                 updateRequired = true;
             }
-            if (body.containsKey("elo")) {
-                sql += "elo = ?, ";
-                updateRequired = true;
-            }
-            if (body.containsKey("games_played")) {
-                sql += "games_played = ?, ";
+            if (updates.containsKey("password")) {
+                sql.append("password_hash = ?, ");
                 updateRequired = true;
             }
 
@@ -298,20 +298,18 @@ public class UserService {
                 return "400 Bad Request - No fields to update.";
             }
 
-            sql = sql.substring(0, sql.length() - 2); // Remove trailing comma
-            sql += " WHERE username = ?";
+            // Remove trailing comma
+            sql.setLength(sql.length() - 2);
+            sql.append(" WHERE username = ?");
 
-            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt = conn.prepareStatement(sql.toString());
 
             int index = 1;
-            if (body.containsKey("password")) {
-                pstmt.setString(index++, hashPassword(body.get("password")));
+            if (updates.containsKey("username")) {
+                pstmt.setString(index++, updates.get("username"));
             }
-            if (body.containsKey("elo")) {
-                pstmt.setInt(index++, Integer.parseInt(body.get("elo")));
-            }
-            if (body.containsKey("games_played")) {
-                pstmt.setInt(index++, Integer.parseInt(body.get("games_played")));
+            if (updates.containsKey("password")) {
+                pstmt.setString(index++, hashPassword(updates.get("password")));
             }
             pstmt.setString(index, username);
 
@@ -324,6 +322,13 @@ public class UserService {
         } catch (SQLException e) {
             e.printStackTrace();
             return "500 Internal Server Error - Database error.";
+        } finally {
+            try {
+                if (pstmt != null) pstmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 

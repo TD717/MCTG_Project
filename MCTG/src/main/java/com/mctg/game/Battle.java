@@ -4,6 +4,8 @@ import com.mctg.cards.Card;
 import com.mctg.cards.MonsterCard;
 import com.mctg.cards.SpellCard;
 import com.mctg.player.Player;
+import com.mctg.player.UserService;
+
 import java.util.List;
 import java.util.ArrayList;
 
@@ -142,5 +144,21 @@ public class Battle {
 
     public boolean isBattleOver() {
         return player1.getDeck().isEmpty() || player2.getDeck().isEmpty();
+    }
+
+    public static String generateScoreboard() {
+        List<Player> players = UserService.getInstance().getLeaderboard();
+
+        if (players.isEmpty()) {
+            return "No players available for the scoreboard.";
+        }
+
+        StringBuilder scoreboard = new StringBuilder("🏆 Scoreboard 🏆\n");
+        int rank = 1;
+        for (Player player : players) {
+            scoreboard.append(String.format("%d. %s - ELO: %d (Games: %d)\n",
+                    rank++, player.getUsername(), player.getElo(), player.getGamesPlayed()));
+        }
+        return scoreboard.toString();
     }
 }

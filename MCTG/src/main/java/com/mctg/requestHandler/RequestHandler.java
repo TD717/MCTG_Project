@@ -8,15 +8,20 @@ import com.mctg.game.Battle;
 import com.mctg.player.Player;
 import com.mctg.server.HttpMethod;
 
-import java.util.Map;
-import java.util.List;
-import java.util.Arrays;
+import java.util.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.UUID;
+import java.util.stream.Collectors;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
+
 
 public class RequestHandler {
     private final UserService userService;
@@ -67,11 +72,6 @@ public class RequestHandler {
 
             case "/deck":
                 if (method == HttpMethod.PUT) {
-                    return userService.updateDeck(
-                            body.get("username"),
-                            Arrays.asList(body.get("cardIds").split(","))
-                    );
-                } else if (method == HttpMethod.GET) {
                     return handleDeckRequest(request, body);
                 }
                 break;
@@ -167,7 +167,23 @@ public class RequestHandler {
         if (method == HttpMethod.GET) {
             return userService.getUserProfile(username);
         } else if (method == HttpMethod.PUT) {
-            return userService.updateUserProfile(username, body);
+            String newUsername = body.get("new_username");
+            String newPassword = body.get("password");
+
+            // Collect updates for username and password only
+            Map<String, String> updates = new HashMap<>();
+            if (newUsername != null && !newUsername.isEmpty()) {
+                updates.put("username", newUsername);
+            }
+            if (newPassword != null && !newPassword.isEmpty()) {
+                updates.put("password", newPassword);
+            }
+
+            if (updates.isEmpty()) {
+                return "400 Bad Request - No fields to update.";
+            }
+
+            return userService.updateUserProfile(username, updates);
         }
 
         return "405 Method Not Allowed";
@@ -306,18 +322,34 @@ public class RequestHandler {
 
     private String handleDeckRequest(Request request, Map<String, String> body) {
         String username = body.get("username");
-        String token = body.get("token");
+        String token = request.getHeader("Authorization");
 
-        if (username == null || username.isEmpty() || token == null || token.isEmpty()) {
-            return "Error: Missing or invalid username/token.";
+        if (token == null || !token.startsWith("Bearer ")) {
+            return "401 Unauthorized - Missing or invalid token.";
         }
 
+        // Extract the token without the "Bearer " prefix
+        token = token.substring(7);
+
+        // Check if the username is provided
+        if (username == null || username.isEmpty()) {
+            return "Error: Missing username.";
+        }
+
+        // Validate the token against the username
+        String validatedUsername = userService.getUsernameFromToken(token);
+        if (validatedUsername == null || !validatedUsername.equals(username)) {
+            return "401 Unauthorized - Invalid token.";
+        }
+
+        // Fetch the player details using the username
         Player player = userService.getPlayer(username);
-        if (player == null || !player.validateToken(token)) {
-            return "Unauthorized request.";
+        if (player == null) {
+            return "404 Not Found - Player does not exist.";
         }
 
         if (request.getMethod().equals(HttpMethod.GET)) {
+            // Fetch the deck for the player
             List<Card> deck = userService.getDeck(username);
             if (deck.isEmpty()) {
                 return "The deck is empty.";
@@ -330,6 +362,21 @@ public class RequestHandler {
                         .append(" damage)\n");
             }
             return deckDetails.toString();
+        }
+
+        if (request.getMethod().equals(HttpMethod.PUT)) {
+            String cardIdsString = body.get("cardIds");
+
+            if (cardIdsString != null && !cardIdsString.isEmpty()) {
+                List<String> cardIds = parseCardIds(cardIdsString);
+
+                // Ensure we are getting exactly 4 card IDs
+                if (cardIds.size() == 4) {
+                    return userService.updateDeck(username, cardIds);
+                }
+                return "400 Bad Request - You must provide exactly 4 card IDs to update the deck.";
+            }
+            return "400 Bad Request - Missing cardIds.";
         }
 
         return "Invalid method for deck management.";
@@ -421,4 +468,12 @@ public class RequestHandler {
     private String handleScoreboard() {
         return Battle.generateScoreboard();
     }
+
+    private List<String> parseCardIds(String cardIdsString) {
+        String cleanCardIdsString = cardIdsString.replaceAll("[\\[\\]\"]", "").trim();
+        List<String> cardIds = Arrays.asList(cleanCardIdsString.split(","));
+        System.out.println("Parsed card IDs: " + cardIds);
+        return cardIds;
+    }
+
 }
