@@ -1,8 +1,8 @@
 package com.mctg.cards;
 
 public class MonsterCard extends Card {
-    public MonsterCard(String name, int damage, ElementType element) {
-        super(name, damage, element);
+    public MonsterCard(String cardID, String name, int damage, ElementType element) {
+        super(cardID, name, damage, element);
     }
 
     @Override

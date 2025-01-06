@@ -1,8 +1,8 @@
 package com.mctg.cards;
 
 public class SpellCard extends Card {
-    public SpellCard(String name, int damage, ElementType element) {
-        super(name, damage, element);
+    public SpellCard(String cardID, String name, int damage, ElementType element) {
+        super(cardID, name, damage, element);
     }
 
     @Override

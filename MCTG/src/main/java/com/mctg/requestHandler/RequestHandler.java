@@ -35,8 +35,17 @@ public class RequestHandler {
         Map<String, String> body = request.getBody();
 
         if (requiresTokenValidation(path)) {
-            String token = body.get("token");
-            if (token == null || token.isEmpty() || !userService.validateToken(token)) {
+            String authHeader = request.getHeader("Authorization");
+
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return "401 Unauthorized - Missing or invalid token format.";
+            }
+
+            String token = authHeader.substring(7);  // Extract token after "Bearer "
+            System.out.println("Extracted Token: " + token);  // Debugging line
+
+            if (token.isEmpty() || !userService.validateToken(token)) {
+                System.out.println("Token validation failed.");
                 return "401 Unauthorized - Invalid or missing token.";
             }
         }
@@ -53,7 +62,7 @@ public class RequestHandler {
 
             case "/cards":
                 if (method == HttpMethod.GET) {
-                    return handleCardsRequest(body);
+                    return handleCardsRequest(body, request);
                 }
                 break;
 
@@ -166,17 +175,25 @@ public class RequestHandler {
         return "405 Method Not Allowed";
     }
 
-    private String handleCardsRequest(Map<String, String> body) {
-        String username = body.get("username");
-        String token = body.get("token");
+    private String handleCardsRequest(Map<String, String> body, Request request) {
+        String authHeader = request.getHeader("Authorization");
 
-        if (username == null || token == null || username.isEmpty() || token.isEmpty()) {
-            return "400 Bad Request - Missing username or token.";
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return "401 Unauthorized - Missing or invalid token format.";
+        }
+
+        String token = authHeader.substring(7);  // Extract token after "Bearer "
+        System.out.println("Extracted Token: " + token);  // Debugging line
+
+        // Retrieve the username linked to the token
+        String username = userService.getUsernameFromToken(token);
+        if (username == null) {
+            return "401 Unauthorized - Invalid token.";
         }
 
         Player player = userService.getPlayer(username);
-        if (player == null || !player.validateToken(token)) {
-            return "401 Unauthorized - Invalid token or player not found.";
+        if (player == null) {
+            return "404 Not Found - Player not found.";
         }
 
         List<Card> cardStack = player.getCardStack();
@@ -184,7 +201,6 @@ public class RequestHandler {
             return "{\"message\": \"No cards available\"}";
         }
 
-        // Manually construct the JSON response
         StringBuilder json = new StringBuilder();
         json.append("{ \"cards\": [");
 

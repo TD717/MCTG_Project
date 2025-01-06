@@ -1,12 +1,17 @@
 package com.mctg.player;
 
 import com.mctg.cards.Card;
+import com.mctg.cards.MonsterCard;
+import com.mctg.cards.SpellCard;
+import com.mctg.db.DBConnection;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.UUID;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.ResultSet;  // Import ResultSet
+import java.util.*;
 
 public class Player {
     private final String username;
@@ -63,8 +68,50 @@ public class Player {
     }
 
     public List<Card> getCardStack() {
+        if (cardStack.isEmpty()) {
+            loadCardStackFromDatabase();
+        }
         return cardStack;
     }
+
+    private void loadCardStackFromDatabase() {
+        cardStack.clear();
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "SELECT * FROM cards WHERE player_id = ?")) {
+
+            pstmt.setObject(1, playerId);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Card card;
+                String type = rs.getString("type");  // Fetch type from DB
+
+                if ("MONSTER".equalsIgnoreCase(type)) {
+                    card = new MonsterCard(
+                            rs.getString("card_id"),
+                            rs.getString("name"),
+                            rs.getInt("damage"),
+                            Card.ElementType.valueOf(rs.getString("element").toUpperCase())
+                    );
+                } else if ("SPELL".equalsIgnoreCase(type)) {
+                    card = new SpellCard(
+                            rs.getString("card_id"),
+                            rs.getString("name"),
+                            rs.getInt("damage"),
+                            Card.ElementType.valueOf(rs.getString("element").toUpperCase())
+                    );
+                } else {
+                    throw new IllegalArgumentException("Unknown card type: " + type);
+                }
+
+                cardStack.add(card);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public List<Card> getDeck() {
         return deck;
@@ -137,7 +184,7 @@ public class Player {
             lockedCards.add(cardId);
             return true;
         }
-        return false;  // Card is already locked
+        return false;
     }
 
     public void unlockCard(String cardId) {

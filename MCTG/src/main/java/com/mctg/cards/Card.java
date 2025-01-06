@@ -8,7 +8,7 @@ public abstract class Card {
     private int damage;
     private ElementType element;
 
-    public Card(String name, int damage, ElementType element) {
+    public Card(String cardID, String name, int damage, ElementType element) {
         this.cardID = java.util.UUID.randomUUID().toString(); // Generate unique ID
         this.name = name;
         this.damage = damage;

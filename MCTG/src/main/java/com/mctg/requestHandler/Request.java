@@ -9,11 +9,14 @@ public class Request {
     private final HttpMethod method;
     private final String path;
     private final Map<String, String> body;
+    private final Map<String, String> headers;  // Add headers field
 
-    public Request(HttpMethod method, String path, String rawBody) {
+    // Updated constructor to accept headers
+    public Request(HttpMethod method, String path, String rawBody, Map<String, String> headers) {
         this.method = method;
         this.path = path;
         this.body = parseJson(rawBody);
+        this.headers = headers != null ? headers : new HashMap<>();  // Initialize headers
     }
 
     public HttpMethod getMethod() {
@@ -28,6 +31,12 @@ public class Request {
         return body;
     }
 
+    // New method to retrieve headers
+    public String getHeader(String headerName) {
+        return headers.getOrDefault(headerName, null);
+    }
+
+    // Existing JSON parsing method (no changes)
     private Map<String, String> parseJson(String json) {
         Map<String, String> data = new HashMap<>();
         if (json == null || json.isEmpty()) {

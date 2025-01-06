@@ -5,6 +5,7 @@ import com.mctg.cards.MonsterCard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.UUID;
 
 public class CardTest {
     private Card card1;
@@ -13,14 +14,14 @@ public class CardTest {
 
     @BeforeEach
     public void setUp() {
-        card1 = new MonsterCard("Dragon", 100, Card.ElementType.FIRE);
-        card2 = new MonsterCard("Goblin", 50, Card.ElementType.NORMAL);
-        card3 = new MonsterCard("Dragon", 100, Card.ElementType.FIRE); // Different instance, same attributes
+        card1 = new MonsterCard(UUID.randomUUID().toString(), "Dragon", 100, Card.ElementType.FIRE);
+        card2 = new MonsterCard(UUID.randomUUID().toString(), "Goblin", 50, Card.ElementType.NORMAL);
+        card3 = new MonsterCard(UUID.randomUUID().toString(), "Dragon", 100, Card.ElementType.FIRE); // Different instance, same attributes
     }
 
     @Test
     public void testCardEquality() {
-        assertNotEquals(card1, card3); // Even with the same name, they should have different IDs
+        assertNotEquals(card1, card3); // Different cardIDs, so they should not be equal
         assertEquals(card1.getName(), card3.getName());
         assertEquals(card1.getDamage(), card3.getDamage());
     }

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class BattleTest {
     private Player player1;
@@ -21,24 +22,23 @@ public class BattleTest {
 
     @BeforeEach
     public void setUp() {
-        player1 = new Player("Player1", "password123", playerId);
-        player2 = new Player("Player2", "password123", playerId);
+        player1 = new Player("Player1", "password123", UUID.randomUUID());
+        player2 = new Player("Player2", "password123", UUID.randomUUID());
 
         deck1 = new ArrayList<>(List.of(
-                new MonsterCard("Dragon", 100, Card.ElementType.FIRE),
-                new MonsterCard("Goblin", 50, Card.ElementType.NORMAL),
-                new MonsterCard("Elf", 70, Card.ElementType.WATER),
-                new MonsterCard("Knight", 80, Card.ElementType.NORMAL)
+                new MonsterCard(UUID.randomUUID().toString(), "Dragon", 100, Card.ElementType.FIRE),
+                new MonsterCard(UUID.randomUUID().toString(), "Goblin", 50, Card.ElementType.NORMAL),
+                new MonsterCard(UUID.randomUUID().toString(), "Elf", 70, Card.ElementType.WATER),
+                new MonsterCard(UUID.randomUUID().toString(), "Knight", 80, Card.ElementType.NORMAL)
         ));
 
         deck2 = new ArrayList<>(List.of(
-                new MonsterCard("Ork", 90, Card.ElementType.NORMAL),
-                new MonsterCard("Troll", 60, Card.ElementType.WATER),
-                new MonsterCard("Witch", 40, Card.ElementType.FIRE),
-                new MonsterCard("Golem", 50, Card.ElementType.NORMAL)
+                new MonsterCard(UUID.randomUUID().toString(), "Ork", 90, Card.ElementType.NORMAL),
+                new MonsterCard(UUID.randomUUID().toString(), "Troll", 60, Card.ElementType.WATER),
+                new MonsterCard(UUID.randomUUID().toString(), "Witch", 40, Card.ElementType.FIRE),
+                new MonsterCard(UUID.randomUUID().toString(), "Golem", 50, Card.ElementType.NORMAL)
         ));
 
-        // Ensure deck size is exactly 4 before setting
         assertEquals(4, deck1.size(), "Deck1 should have exactly 4 cards.");
         assertEquals(4, deck2.size(), "Deck2 should have exactly 4 cards.");
 
@@ -64,9 +64,9 @@ public class BattleTest {
     @Test
     public void testDeckSizeValidation() {
         List<Card> invalidDeck = new ArrayList<>(List.of(
-                new MonsterCard("Troll", 60, Card.ElementType.WATER),
-                new MonsterCard("Witch", 40, Card.ElementType.FIRE)
-        ));  // Only 2 cards, should fail
+                new MonsterCard(UUID.randomUUID().toString(), "Troll", 60, Card.ElementType.WATER),
+                new MonsterCard(UUID.randomUUID().toString(), "Witch", 40, Card.ElementType.FIRE)
+        ));
 
         IllegalArgumentException thrown = assertThrows(
                 IllegalArgumentException.class,

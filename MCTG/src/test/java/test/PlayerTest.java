@@ -7,6 +7,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PlayerTest {
@@ -16,9 +18,9 @@ public class PlayerTest {
 
     @BeforeEach
     public void setUp() {
-        player = new Player("Player1", "password123", playerId);
-        card1 = new MonsterCard("Dragon", 100, Card.ElementType.FIRE);
-        card2 = new MonsterCard("Goblin", 50, Card.ElementType.NORMAL);
+        player = new Player("Player1", "password123", UUID.randomUUID());
+        card1 = new MonsterCard(UUID.randomUUID().toString(), "Dragon", 100, Card.ElementType.FIRE);
+        card2 = new MonsterCard(UUID.randomUUID().toString(), "Goblin", 50, Card.ElementType.NORMAL);
     }
 
     @Test

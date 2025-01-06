@@ -235,8 +235,6 @@ public class UserService {
         return null;
     }
 
-
-
     public String getUserProfile(String username) {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(
@@ -345,11 +343,14 @@ public class UserService {
     // Helper method to create Card instances
     private Card createCardInstance(String cardId, String name, int damage, Card.ElementType element, String type) {
         if (type.equalsIgnoreCase("monster")) {
-            return new MonsterCard(name, damage, element);
+            return new MonsterCard(cardId, name, damage, element);  // Pass cardId
+        } else if (type.equalsIgnoreCase("spell")) {
+            return new SpellCard(cardId, name, damage, element);  // Pass cardId
         } else {
-            return new SpellCard(name, damage, element);
+            throw new IllegalArgumentException("Unknown card type: " + type);
         }
     }
+
 
     // Update Player's Deck by Username
     public String updateDeck(String username, List<String> cardIds) {
@@ -449,4 +450,22 @@ public class UserService {
         return players;
     }
 
+    public String getUsernameFromToken(String token) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "SELECT username FROM players WHERE token = ?")) {
+
+            pstmt.setString(1, token);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getString("username");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }
+
+

@@ -70,11 +70,15 @@ public class MTCGServer {
             String path = requestParts[1];
             int contentLength = 0;
             StringBuilder body = new StringBuilder();
-            String line;
+            Map<String, String> headers = new HashMap<>();  // Store headers
 
+            String line;
             while ((line = in.readLine()) != null && !line.isEmpty()) {
                 if (line.startsWith("Content-Length:")) {
                     contentLength = Integer.parseInt(line.split(":")[1].trim());
+                } else if (line.contains(":")) {
+                    String[] headerParts = line.split(": ", 2);
+                    headers.put(headerParts[0], headerParts[1]);
                 }
             }
 
@@ -84,7 +88,8 @@ public class MTCGServer {
                 body.append(buffer);
             }
 
-            Request request = new Request(method, path, body.toString());
+            // Pass headers to Request constructor
+            Request request = new Request(method, path, body.toString(), headers);
             String response = requestHandler.handleRequest(request);
 
             out.println("HTTP/1.1 200 OK");
