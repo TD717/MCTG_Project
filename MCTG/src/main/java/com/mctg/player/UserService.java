@@ -337,9 +337,9 @@ public class UserService {
         List<Card> deck = new ArrayList<>();
 
         String sql = "SELECT c.card_id, c.name, c.damage, c.element, c.type " +
-                "FROM decks d " +
-                "JOIN cards c ON d.card_id = c.card_id " +
-                "WHERE d.player_username = ?";
+                "FROM player_cards pc " +
+                "JOIN cards c ON pc.card_id = c.card_id " +
+                "WHERE pc.username = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -377,74 +377,41 @@ public class UserService {
         }
     }
 
-
     // Update Player's Deck by Username
     public String updateDeck(String username, List<String> cardIds) {
-        Player player = getPlayer(username);
-        if (player == null) {
-            return "Player not found.";
-        }
-
-        // Early check to ensure exactly 4 card IDs are provided
         if (cardIds.size() != 4) {
-            return "You must provide exactly 4 card IDs to update the deck.";
+            return "400 Bad Request - A deck must contain exactly 4 cards.";
         }
 
-        List<Card> newDeck = new ArrayList<>();
-        List<String> invalidCards = new ArrayList<>();
-
-        // Validate each card ID and add to the new deck
-        for (String cardId : cardIds) {
-            Card card = player.getCardById(cardId);
-            if (card == null) {
-                invalidCards.add(cardId);
-            }
-            if (newDeck.contains(card)) {
-                return "Duplicate cards are not allowed.";
-            }
-            newDeck.add(card);
-        }
-
-        if (!invalidCards.isEmpty()) {
-            return "Invalid card IDs: " + String.join(", ", invalidCards);
-        }
-
-        // Ensure the deck contains exactly 4 unique cards
-        if (newDeck.size() != 4) {
-            return "Deck must contain exactly 4 unique cards.";
-        }
-
-        // Update deck in the database with transaction handling
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement deleteStmt = conn.prepareStatement(
-                     "DELETE FROM decks WHERE player_username = ?");
+                     "DELETE FROM player_cards WHERE username = ?");
              PreparedStatement insertStmt = conn.prepareStatement(
-                     "INSERT INTO decks (player_username, card_id) VALUES (?, ?)")) {
+                     "INSERT INTO player_cards (username, card_id) VALUES (?, ?)")) {
 
-            conn.setAutoCommit(false);  // Start transaction
+            conn.setAutoCommit(false);
 
-            // Clear the old deck
+            // Clear existing cards for the player
             deleteStmt.setString(1, username);
             deleteStmt.executeUpdate();
 
-            // Insert new deck
-            for (Card card : newDeck) {
+            // Add new cards to the player's deck
+            for (String cardId : cardIds) {
                 insertStmt.setString(1, username);
-                insertStmt.setString(2, card.getCardID());
+                insertStmt.setString(2, cardId);
                 insertStmt.addBatch();
             }
             insertStmt.executeBatch();
 
             conn.commit();
-            player.setDeck(newDeck);
-
             return "Deck updated successfully.";
 
         } catch (SQLException e) {
             e.printStackTrace();
-            return "Database error while updating deck.";
+            return "500 Internal Server Error - Database issue.";
         }
     }
+
 
     // Leaderboard
     public List<Player> getLeaderboard() {

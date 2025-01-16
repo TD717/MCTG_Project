@@ -27,16 +27,12 @@ public class Booster {
     }
 
     public String applyBoostEffect() {
-        switch (type) {
-            case DAMAGE_INCREASE:
-                return "Damage increased by 20% for this round!";
-            case IMMUNITY:
-                return "Card is immune to damage this round!";
-            case ELEMENT_NEUTRALIZER:
-                return "Elemental advantage is neutralized this round!";
-            default:
-                return "No booster effect.";
-        }
+        return switch (type) {
+            case DAMAGE_INCREASE -> "Damage increased by 20% for this round!";
+            case IMMUNITY -> "Card is immune to damage this round!";
+            case ELEMENT_NEUTRALIZER -> "Elemental advantage is neutralized this round!";
+            default -> "No booster effect.";
+        };
     }
 
     @Override

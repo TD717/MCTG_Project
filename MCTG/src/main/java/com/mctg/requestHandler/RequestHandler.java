@@ -71,7 +71,7 @@ public class RequestHandler {
                 break;
 
             case "/deck":
-                if (method == HttpMethod.PUT) {
+                if (method == HttpMethod.PUT || method == HttpMethod.GET) {
                     return handleDeckRequest(request, body);
                 }
                 break;

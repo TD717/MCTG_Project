@@ -4,7 +4,7 @@ BASE_URL="http://localhost:10001"
 
 # Extract token from JSON response
 extract_token() {
-  echo $1 | jq -r .token
+  echo "$1" | jq -r .token
 }
 
 # Register users
@@ -77,4 +77,36 @@ LOGIN_RESPONSE_UPDATED2=$(curl -s -X POST $BASE_URL/login \
     -H "Content-Type: application/json" \
     -d '{"username": "testuser2", "password": "newpassword456"}')
 echo "Re-login Response for testuser2: $LOGIN_RESPONSE_UPDATED2"
+TOKEN2_UPDATED=$(extract_token "$LOGIN_RESPONSE_UPDATED2")
+echo "Extracted Updated Token2: $TOKEN2_UPDATED"
+echo -e "\n"
+
+#!/bin/bash
+
+BASE_URL="http://localhost:10001"
+
+# Retrieve deck for testuser1
+echo "12) Retrieve deck for testuser1"
+GET_DECK_RESPONSE1=$(curl -s -X GET $BASE_URL/deck \
+    -H "Authorization: Bearer $TOKEN1" \
+    -H "Content-Type: application/json" \
+    -d '{"username": "testuser1"}')
+echo "Retrieve Deck Response for testuser1: $GET_DECK_RESPONSE1"
+echo -e "\n"
+
+# Retrieve deck for testuser2
+echo "13) Retrieve deck for testuser2"
+GET_DECK_RESPONSE2=$(curl -s -X GET $BASE_URL/deck \
+    -H "Authorization: Bearer $TOKEN2" \
+    -H "Content-Type: application/json" \
+    -d '{"username": "testuser2"}')
+echo "Retrieve Deck Response for testuser2: $GET_DECK_RESPONSE2"
+echo -e "\n"
+
+# Show scoreboard
+echo "14) Retrieve scoreboard"
+SCOREBOARD_RESPONSE=$(curl -s -X GET $BASE_URL/scoreboard \
+    -H "Authorization: Bearer $TOKEN1" \
+    -H "Content-Type: application/json")
+echo "Scoreboard Response: $SCOREBOARD_RESPONSE"
 echo -e "\n"
