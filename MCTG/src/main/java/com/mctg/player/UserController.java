@@ -1,6 +1,8 @@
 package com.mctg.player;
 
 import com.mctg.cards.Card;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -39,12 +41,29 @@ public class UserController {
 
     public String updateDeck(String username, List<String> cardIds, String token) {
         Player player = userService.getPlayer(username);
-        if (player == null || !player.validateToken(token)) {
-            return "Unauthorized request.";
+
+        if (player == null) {
+            return "Unauthorized request: Player not found.";
         }
-        if (cardIds.size() != 4) {
-            return "Deck must contain exactly 4 cards.";
+
+        if (!player.validateToken(token)) {
+            return "Unauthorized request: Invalid token.";
         }
+
+        // If cardIds is null or empty, randomly select 4 cards
+        if (cardIds == null || cardIds.isEmpty()) {
+            List<String> allCardIds = userService.getAllCardIdsForPlayer(username);
+
+            if (allCardIds.size() < 4) {
+                return "400 Bad Request - Player does not have enough cards to form a deck.";
+            }
+
+            // Randomly select 4 cards
+            Collections.shuffle(allCardIds);
+            cardIds = allCardIds.subList(0, 4);
+        }
+
+        // Pass the validated or randomly selected cardIds to the service
         return userService.updateDeck(username, cardIds);
     }
 }

@@ -238,7 +238,6 @@ public class UserService {
         return null;
     }
 
-
     public UUID getPlayerIdFromDatabase(String username) {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(
@@ -412,7 +411,6 @@ public class UserService {
         }
     }
 
-
     // Leaderboard
     public List<Player> getLeaderboard() {
         List<Player> players = new ArrayList<>();
@@ -461,6 +459,27 @@ public class UserService {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public List<String> getAllCardIdsForPlayer(String username) {
+        List<String> cardIds = new ArrayList<>();
+
+        String sql = "SELECT card_id FROM player_cards WHERE username = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                cardIds.add(rs.getString("card_id"));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return cardIds;
     }
 }
 
