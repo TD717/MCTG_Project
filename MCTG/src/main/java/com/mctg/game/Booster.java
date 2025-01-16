@@ -26,15 +26,6 @@ public class Booster {
         return new Booster(types[random.nextInt(types.length)]);
     }
 
-    public String applyBoostEffect() {
-        return switch (type) {
-            case DAMAGE_INCREASE -> "Damage increased by 20% for this round!";
-            case IMMUNITY -> "Card is immune to damage this round!";
-            case ELEMENT_NEUTRALIZER -> "Elemental advantage is neutralized this round!";
-            default -> "No booster effect.";
-        };
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
