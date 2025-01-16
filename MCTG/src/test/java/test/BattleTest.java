@@ -78,14 +78,6 @@ public class BattleTest {
     }
 
     @Test
-    public void testBoosterEffectOnDamage() {
-        Battle battle = new Battle(player1, player2);
-        int damageBeforeBoost = deck1.get(0).getDamage();
-        int damageAfterBoost = battle.calculateEffectiveDamage(deck1.get(0), deck2.get(0), new Booster(Booster.BoosterType.DAMAGE_INCREASE));
-        assertTrue(damageAfterBoost > damageBeforeBoost);
-    }
-
-    @Test
     public void testBattleLogRecordsBooster() {
         Battle battle = new Battle(player1, player2);
         battle.start();

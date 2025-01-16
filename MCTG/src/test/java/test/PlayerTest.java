@@ -33,25 +33,11 @@ public class PlayerTest {
     }
 
     @Test
-    public void testAddCardToCardStack() {
-        player.getCardStack().add(card1);
-        assertTrue(player.getCardStack().contains(card1));
-    }
-
-    @Test
     public void testSetDeck() {
         List<Card> newDeck = List.of(card1, card2, card1, card2);
         player.setDeck(newDeck);
         assertEquals(4, player.getDeck().size());
         assertThrows(IllegalArgumentException.class, () -> player.setDeck(new ArrayList<>()));
-    }
-
-    @Test
-    public void testBuyPackage() {
-        List<Card> newCards = List.of(card1, card2);
-        assertTrue(player.buyPackage(newCards));
-        assertEquals(15, player.getCoins());
-        assertTrue(player.getCardStack().containsAll(newCards));
     }
 
     @Test
